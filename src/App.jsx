@@ -6,6 +6,7 @@ import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
 import Table from './api/components/Table';
+import cn from 'classnames';
 
 const products = productsFromServer.map((product) => {
   const category = categoriesFromServer.find(category => category.id === product.categoryId);
@@ -20,26 +21,23 @@ const products = productsFromServer.map((product) => {
 
 console.log(products);
 
-function filterProducts(productsArr, { filterType }) {
-  const currentProducts = [...productsArr];
+function filterProducts(productsArr, { targetUser }) {
+  let currentProducts = [...productsArr];
 
-  if (filterType) {
-    switch (filterType) {
-      case ('Roma'):
-        currentProducts.filter(
-          currentProduct => currentProduct.user.name === 'Roma',
-        );
-
-        break;
-
-      default:
-        break;
-    }
+  if (targetUser !== '') {
+    currentProducts = currentProducts.filter(currentProduct => (
+      currentProduct.user.name === targetUser
+    ));
   }
+
+  return currentProducts;
 }
 
 export const App = () => {
   const [targetUser, setTargetUser] = useState('');
+  const visibleProducts = filterProducts(products, { targetUser });
+
+  console.log(targetUser)
 
   return (
     <div className="section">
@@ -54,39 +52,26 @@ export const App = () => {
               <a
                 data-cy="FilterAllUsers"
                 href="#/"
-                onClick={() => setTargetUser('all')}
+                onClick={() => setTargetUser('')}
+                className={cn({
+                  'is-active': targetUser === '',
+                })}
               >
                 All
               </a>
 
-              <a
-                data-cy="FilterUser"
-                href="#/"
-              >
-                Roma
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-                className="is-active"
-              >
-                Anna
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-              >
-                Max
-              </a>
-
-              <a
-                data-cy="FilterUser"
-                href="#/"
-              >
-                Max
-              </a>
+              {usersFromServer.map(user => (
+                <a
+                  data-cy="FilterUser"
+                  href="#/"
+                  onClick={() => setTargetUser(user.name)}
+                  className={cn({
+                    'is-active': targetUser === user.name,
+                  })}
+                >
+                  {user.name}
+                </a>
+              ))}
             </p>
 
             <div className="panel-block">
@@ -172,7 +157,7 @@ export const App = () => {
             No products matching selected criteria
           </p>
 
-          <Table products={products} />
+          <Table products={visibleProducts} />
         </div>
       </div>
     </div>
