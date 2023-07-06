@@ -2,14 +2,16 @@
 import React, { useState } from 'react';
 import './App.scss';
 
+import cn from 'classnames';
 import usersFromServer from './api/users';
 import categoriesFromServer from './api/categories';
 import productsFromServer from './api/products';
 import Table from './api/components/Table';
-import cn from 'classnames';
 
 const products = productsFromServer.map((product) => {
-  const category = categoriesFromServer.find(category => category.id === product.categoryId);
+  const category = categoriesFromServer.find(categoryId => (
+    categoryId.id === product.categoryId
+  ));
   const userInfo = usersFromServer.find(user => user.id === category.ownerId);
 
   return {
@@ -19,9 +21,13 @@ const products = productsFromServer.map((product) => {
   };
 });
 
-console.log(products);
+function preparedQuery(query) {
+  return query
+    .trim()
+    .toLowerCase();
+}
 
-function filterProducts(productsArr, { targetUser }) {
+function filterProducts(productsArr, { targetUser, query }) {
   let currentProducts = [...productsArr];
 
   if (targetUser !== '') {
@@ -30,14 +36,19 @@ function filterProducts(productsArr, { targetUser }) {
     ));
   }
 
+  if (query) {
+    currentProducts = currentProducts.filter(currentProduct => (
+      currentProduct.name.toLowerCase().includes(preparedQuery(query))
+    ));
+  }
+
   return currentProducts;
 }
 
 export const App = () => {
   const [targetUser, setTargetUser] = useState('');
-  const visibleProducts = filterProducts(products, { targetUser });
-
-  console.log(targetUser)
+  const [query, setQuery] = useState('');
+  const visibleProducts = filterProducts(products, { targetUser, query });
 
   return (
     <div className="section">
@@ -81,7 +92,8 @@ export const App = () => {
                   type="text"
                   className="input"
                   placeholder="Search"
-                  value="qwe"
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
                 />
 
                 <span className="icon is-left">
@@ -94,6 +106,7 @@ export const App = () => {
                     data-cy="ClearButton"
                     type="button"
                     className="delete"
+                    onClick={() => setQuery('')}
                   />
                 </span>
               </p>
@@ -145,6 +158,10 @@ export const App = () => {
                 data-cy="ResetAllButton"
                 href="#/"
                 className="button is-link is-outlined is-fullwidth"
+                onClick={() => {
+                  setTargetUser('');
+                  setQuery('');
+                }}
               >
                 Reset all filters
               </a>
@@ -161,4 +178,5 @@ export const App = () => {
         </div>
       </div>
     </div>
-  )};
+  );
+};
